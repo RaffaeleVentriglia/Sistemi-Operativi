@@ -1,0 +1,89 @@
+Problema:
+In una biblioteca universitaria possono entrare e trovare posto seduto al pių N studenti.
+Ogni studente che ha trovato posto puō richiedere al bibliotecario un volume degli M a disposizione, considerando che per ogni volume ci sono K copie.
+
+
+Var:
+N,M,K : int
+Semaforo generico Biblioteca = N; //in una biblioteca possono entrare al piu N student
+Semaforo binario Disponibile = 1 //controlla se il bibliotecario è disponibile
+Semaforo binario Approvazione = 0 //aspetta l'approvazione di un libro da parte di un bibliotecario
+Semaforo binario Richiesta = 0; //all'inizio il bibliotecario aspetta una richiesta
+Semaforo risorse Volume[M] = K; //array di semafori contatori: ogni volume ha K elementi
+Mutex entra, esce = 1; //semaforo per gestire la mutua esclusione sulle operazioni
+PostiOccupati = 0: int  //il volume che uno studente desidera
+VolumeDesiderato: int //volume che uno studente desidera prendere
+
+Questo esercizio potrebbe soffrire di starvation in quanto un processo
+potrebbe richiedere un libro che non è disponibile: se ciò accadesse,
+finchè non torna disponibile quel libro, nessun altro potrebbe fare richiesta
+di un libro fintanto che il libro richiesto da uno studente non sia diventato di
+nuovo disponibile: in quel caso, il bibliotecario, anch'esso bloccato sull'aspettare un 
+libro che torni (e che quindi non possa servire altri studenti fin quando il libro non 
+diventi di nuovo disponibile) una volta reso di nuovo disponibile il libro tornerebbe ad operare
+correttamente con gli altri studenti, sbloccando quello in attesa del libro.
+
+
+Studente() {
+begin 
+ 
+ wait(entra) //inizio mutua esclusione per il controllo della variabile
+ if(PostiOccupati < N) { //se c'è posto 
+	PostiOccupati++ //aumenta i posti occupati
+	signal(entra) //fine mutua esclusione per il controllo della variabile
+	wait(Biblioteca) //scala un posto nella biblioteca
+	wait(Disponibile) //aspetta che il bibliotecario sia disponibile
+	VolumeDesiderato = rand 0 % M //da 0 a M
+
+	//si dovrebbe checkare che il libro sia disponibile prima di fare la richiesta,
+	//altrimenti si genera inutile starvation.
+
+	signal(Richiesta) //comunica al bibliotecaio che vuoi un libro
+	wait(Approvazione) //aspetta la sua approvazione
+ 	sleep(rand 1 % 10) //aspetta un po di tempo per leggere 
+	signal(volume[VolumeDesiderato]) //riposa il libro quando hai finito di leggere
+	signal(Biblioteca) //lascia la biblioteca
+	wait(esce) //inizio mutua esclusione per decrementare i posti disponibili
+	PostiOccupati-- //li decremente
+	signal(esce) //esce dalla biblioteca e dalla mutua esclusione 
+ } else signal(CS) //altrimenti esci 
+
+end
+}
+
+
+
+Bibliotecario {
+begin
+ loop
+
+ wait(Richiesta) //aspetta una richiesta
+ wait(Volume[VolumeDesiderato]) //decrementa il contatore 
+ signal(Approvazione)
+ signal(Disponibile)
+
+ forever
+end
+}
+
+
+void RichiediLibro() {
+
+ 
+ signal(Richiesta)
+ if(
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+

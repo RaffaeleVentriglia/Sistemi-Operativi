@@ -1,0 +1,6 @@
+Nome	  Cognome    età      Città     Lavoro
+Antonio   Bianchi    25	      Napoli    Impiegato
+Luigi     Rossi      30	      Milano    Imprenditore
+Giuseppe  Celeste    34       Sondrio   Commerciante
+Armando   Giallo     19       Lucca     Impiegato
+Pasquale  Verde      39       Napoli    Commerciante

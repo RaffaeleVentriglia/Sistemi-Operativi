@@ -1,0 +1,86 @@
+Un panettiere produce tre tipi di pane. I clienti del suddetto esercizio, si dispongono in un'unica fila per essere
+serviti. Al proprio turno, un cliente chiede uno dei tre tipi di pane e se disponibile lo riceve lasciando l'esercizio.
+Nel caso in cui il tipo di pane richiesto non fosse disponibile e non fosse già in preparazione, il panettiere inforna
+una quantità N del tipo di pane mancante e passa al prossimo cliente. Terminata la cottura, i clienti in attesa
+vengono serviti in maniera prioritaria rispetto a quelli in fila.
+Discutere la soluzione proposta in termini di possibili situazioni di starvation/deadlock e, nel caso, si propongano
+soluzioni ammissibili.
+
+Var:
+N,T: int //quantità di pane infornato e tempo cottura del pane se non disponibile
+Tipo_pane_scelto: int //comunica al panettiere che tipo di pane vuole
+Pane_Mancante[3] = 1; //array di interi: segna qual è il tipo di pane che manca (0 se manca 1 se no)
+Fila_Clienti_tipologia_pane[3] = 0: //array di interi che tiene conto di quante persone in fila per il pane ci sono, per eventualmente sbloccarle
+Quantita_pane_disponibile[3] = N: array di int //tiene conto della disponibilità del pane per i cicli di controllo, il pane è pieno all'inizio (=N)
+Tipo_pane[3]: array di semafori contatori //tiene traccia dei tipi di pane e della loro disponibilità
+Fila_Clienti=1: semaforo binario //semaforo binario che tiene conto della fila di clienti in attesa di essere serviti e di quello attualmente servito
+CLiente_arrivato = 0: semaforo binario //avverte il panettiere quando arriva un cliente
+Numero_clienti_prioritari = 0: int //teniamo traccia di quante persone stanno aspettando il pane da sfornare
+Mutex = 1: //mutex per CS
+
+SIGN_HANDLER(int signo) {
+
+ i = 0
+ while(i < 3) {
+ 	if(Pane_Mancante[i] == 0) { //se manca il pane
+		for(j = 0; j < N; j++) {
+			signal(Fila_clienti_tipologia_pane[i]) //sblocca tutti i clienti che hanno richiesto un pane che non c'era, 	
+		}					       // ed eventualmente rifornisci anche il bancone se i clienti in attesa sono meno delle unita prodotte
+	}
+ }
+
+}
+
+Panettiere() {
+begin
+ loop
+
+ wait(Cliente_arrivato) //aspetta un cliente 
+ signal(Fila_client) //dai l'ok ad un cliente per essere servito 
+ 
+ wait(Mutex)
+ if(Quantita_pane_disponibile[Tipo_pane_scelto] > 0) }
+	signal(Tipo_pane_scelto) //avverti il cliente che può andarsene
+	signal(Mutex) //esci pure dalla sez. critica
+ } else { //il pane scelto non c'è
+	if(Pane_Mancante[Tipo_pane_scelto] > 0) { //fai mancare il pane solo se il contatore è = 1 
+		Pane_Mancante[Tipo_pane_scelto]-- //decrementa a 0 
+	}
+	signal(Mutex) //lascia la sez. critica 
+	inforna(N) //inforna N unita di pane
+ 	alarm(T) //aspetta un tempo T per farlo cuocere
+	//torna a servire
+   }
+
+
+ forever
+end
+}
+
+Cliente() {
+begin
+ Tipo_di_pane_richiesto = 0: int //che pane vogliamo prendere?
+
+ signal(Cliente_arrivato)
+ wait(Fila_clienti) //aspetta che il panettiere ti dia l'ok per essere servito
+
+ Tipo_di_pane_richiesto = rand 0 % 2 //scegli il tipo di pane 
+
+ wait(Mutex)
+ if(Quantita_pane_disponibile[Tipo_di_pane_richiesto] > 0) { //se è disponibile
+	Quantita_pane_disponibile[Tipo_di_pane_richiesto]-- //decrementa il pane
+	Tipo_Pane = Tipo_di_pane_richiesto //assegna il pane richiesto al tipo di pane da servire
+	signal(Mutex)
+	wait(Tipo_Pane[Tipo_di_pane_richiesto]) //aspetta che il panettiere ti serva
+	signal(Fila_clienti) //esci
+ } else {
+	Fila_clienti_tipologia_pane[Tipo_di_pane_richiesto]++ //un cliente in fila per questa tipologia 
+	signal(Mutex)
+	signal(Fila_Clienti) //esci dalla fila principale e mettiti nella tua per aspettare il pane richiesto
+	wait(Tipo_Pane[Tipo_di_pane_richiesto]) //aspetta nella fila del tuo pane 
+   }
+ 
+ 
+
+end
+}

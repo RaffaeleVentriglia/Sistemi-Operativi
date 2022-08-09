@@ -1,0 +1,68 @@
+In una fabbrica, N operai preparano piastrelle da far cuocere in un forno, capace di cuocerne M contemporaneamente. All'uscita dal forno K operai visionano le piastrelle per decorarle secondo tale sequenza di passi: se trova una piastrella difettata inizia a prenderne dal forno 2 alla volta, altrimenti ne prende 1 alla volta.
+
+Var: 
+K,N,M: int
+Vuoto = N: Semaforo contatore //inizialmente il forno ha M posti disponibili
+Pieno = 0: Semaforo contatore //inizialmente il forno è vuoto
+Forno[M]: Array di M piastrelle //buffer condiviso
+Difettose[M]: Array di bool //Array che avanza di indice con Forno per comunicare quali piastrelle siano difettose
+Mutex = 1: Mutex //gestisce le sezioni critiche
+IndiceProduttore, IndiceVisionatore: int
+
+Produttori() {
+begin
+IndiceProduttore = 0 //indice del visionatore
+
+ loop
+
+ wait(Vuoto) //aspetta che sia vuoto per produrre qualcosa
+ wait(Mutex) //Assicurati di essere l'unico ad inserire nel forno
+ Forno[IndiceProduttore] = 1; //Metti una mattonella nel forno 
+ Difettose[IndiceProduttore] = rand 0 % 1 //Può essere difettosa o buona al 50%
+ IndiceProduttore = (IndiceProduttor + 1 % M) //avanza in modo circolare
+ signal(Mutex)
+ signal(Vuoto)
+
+ forever
+end 
+}
+
+Visionatori() {
+begin
+PiastrelleDifettose[1]: Array  //array di due piastrelle
+Piastrella: int //singola piastrealla buona
+IndiceVisionatore = 0; //indice del visionatore
+
+ loop
+ wait(Pieno) //aspetta ci sia qualcosa
+ wait(Mutex) 
+ if(Difettose[IndiceVisionatore] == True) { //se la piastrella analizzata è difettosa
+ 	if(Forno[IndiceVisionatore+1]) {//se esiste un'altra piastrella nel forno
+		PiastrelleDifettose[0] = Forno[IndiceVisionatore] //prendi la prima piastrella
+		PiastrelleDifettose[1] = Forno[IndiceVisionatore+1] //prendi la seconda piastrella
+		IndiceVisionatore = (IndiceVisionatore + 2) % M //aumenta l'indice in maniera circolare
+		signal(Vuoto) //inizia a comunicare che hai consumato una piastrella
+	} else {
+		wait(Pieno) //aspetta che producano un'altra piastrella
+		PiastrelleDifettose[0] = Forno[IndiceVisionatore] //prendi la prima piastrella
+		PiastrelleDifettose[1] = Forno[IndiceVisionatore+1] //prendi la seconda piastrella
+		IndiceVisionatore = (IndiceVisionatore + 1) % M // aumenta l'indice in maniera circolare
+		signal(Vuoto) //inizia a comunicare che hai consumato una piastrella
+       	}
+ 
+ signal(Mutex) //rilascia la risorsa condivisa il prima possibile
+ 
+ } else { //altrimenti non è difettosa
+	 Piastrella = Forno[IndiceVisionatore] //prendi la prima piastrella
+	 IndiceVisionatore = (IndiceVisionatore + 1) % M //aumenta l'indice in maniera circolare
+   }
+
+ signal(Mutex) //rilacia la risorsa condivisa dopo aver effettuato le tue operazioni
+ signal(Vuoto) //comunica che hai consumato 
+
+ Decora() //decora le piastrelle 
+ 
+ forever
+end
+}
+

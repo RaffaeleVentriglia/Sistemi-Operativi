@@ -1,0 +1,98 @@
+Un laboratorio di Sistemi Operativi è gestito da un professore e due tutor. Durante la lezione gli N alunni possono incontrare
+delle difficoltà nello svolgimento delle esercitazioni. Un alunno in difficoltà chiede aiuto al tutor col minor numero di richieste, il
+quale, appena libero, si reca dall’alunno. Nel caso in cui il tutor non riesca a risolvere il problema in T unità di tempo, lascia l’alunno
+che si rivolge al professore. Risolta la difficoltà, l’alunno prosegue l’esercitazione fino alla fine della lezione. Si supponga che la
+lezione inizi contemporaneamente per tutti gli alunni e che ogni alunno possa richiedere più volte l’aiuto dei tutor e del professore.
+
+Var
+N, T = rand 5%10: int 
+Tutors[2] = 1: array di semafori binari //inizializiamo ad uno entrambi poiche i tutor sono entrambi disponibili
+CodaTutor[2] = N: array di semafori contatori //inizializziamo la coda di entrambi i tutor a N, poichè ogni tutor può prendere tutti gli N studenti in coda, qualunque essi siano
+ContTutor1, ContTutor2 = 0:  int //contiamo la coda dei tutor
+Studente_tutor_aiuto = 0: semaforo binario //i tutor possono aiutare due persone per volta, nessuno ha bisogno di aiuto all'iniziop
+ProblemaRisolto=0: semaforo binario //indica se un problema è stato risolto o meno
+Studente_Professore_aiuto = 1: semaforo binario // il professore può aiutare una persona per volta
+Mutex = 1: semaforo binario  //gestiamo la sezione critica
+
+
+
+
+
+
+Studente() {
+begin
+ Difficolta: int //ogni studente può incontrare una difficolta
+ loop
+  
+  sleep(rand0%20) //segui la lezione per un determinato tot di tempo
+  Difficolta = rand 0%1; //uno studente può avere una difficoltà
+  if(Difficolta) { //se esiste una effettiva difficolta di uno studente
+  	if(ContTutor1 < ContTutor2) { //se la coda del primo tutor è minore di quella del secondo 
+		wait(CodaTutor[1]) //accodati al tutor con minor richieste
+		wait(Mutex) //entra nella sezione critica
+		ContTutor1++ //aumenta il contatore della coda del primo tutore
+		signal(Mutex) //rilascia la sezione critica	
+		signal(Studente_tutor_aiuto) //segnal al tutor che ha bisogno di aiuto
+		wait(Tutors[1]) //aspetta che il primo tutor sia disponibile
+		wait(Problema_Risolto) //non è detto che quando esce dal tutor il problema è stato risolto: aspetta che si possa uscire ( se è stato risolto esce subito)
+		signal(Tutor[1]) // fai andare via il tutor
+		signal(CodaTutor[1]) //rilascia la posizione nella coda e fai avanzare		
+	
+	} else { //altirmenti accodati al tutor 2
+		wait(CodaTutor[2]) //accodati al secondo tutor
+		wait(Mutex) //entra nella sez. critica
+		ContTutor2++ //aumenta il contatore della coda del secondo tutor
+		signal(Mutex) //esci dalla sezione critica
+		wait(Tutor[2]) //aspetta che il secondo tutor sia disponibile
+		wait(Problema_Risolto) //non è detto che quando esce dal tutor il problema è stato risolto: aspetta che si possa uscire ( se è stato risolto esce subito)
+		signal(Tutor[2])
+		signal(CodaTutor[2]) //rilascia la posizione nella coda e fai avanzare
+	  }
+  }
+    
+
+
+ forever
+end
+}
+
+
+
+Tutor() {
+begin
+Esito: int //tieni traccia se riesci a risolvere l'esercizio o meno
+ loop
+
+  wait(Studente_tutor_aiuto) //aspetta che ci sia qualcuno da aiutare
+  for(int i = 0; i<T; i++) { //prova a risolvere il problema per un tempo T massimo
+	sleep(1)
+	Esito = rand 0%2 //un'assistente ha il 75% di possibilità di riuscire ad aiutare uno studente
+	if(Esito) { //se l'esito è positivo, ovvero il tutor è riuscito ad aiutare  
+		signal(Problema_Risolto)
+		break; //interrompi il ciclo
+	}
+  }
+
+ if(!Esito) { //se il tutor non ha trovato la soluzione
+ 	signal(Studente_professore_Aiuto) //comunica al professore che non sei riuscito a risolvere il problema
+ 	//esci e ripeti il ciclo per vedere se c'è qualcuno che ha bisogno di aiuto
+ }
+
+ forever
+end
+}
+
+
+
+Professore() {
+begin
+ loop
+
+ wait(Studente_Professore_aiuto) //aspetta che ci sia qualcuno da aiutare
+ //risolvi il problema
+ signal(Problema_Risolto)
+
+
+ forever
+end
+}

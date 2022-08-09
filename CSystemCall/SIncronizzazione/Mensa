@@ -1,0 +1,75 @@
+Si consideri il problema della mensa universitaria:
+Vi sono N utenti che dopo aver effettuato il pranzo, depongono
+i loro vassoi in M contenitori, ognuno dei quali è composto da K ripiani in cui riporli.
+Periodicamente, un addetto svuota un contenitore di vassoi alla volta, scegliendo tra quelli
+già pieni, e lava i piatti.
+
+Var:
+M, K, N: int
+Semaforo generico Contenitori[M] = K //Ci sono inizialmente M contenitori, ognuno dei quali ha K ripiani.
+Occupati[M] = False: Bool Array //per indicare all'addetto quali sono i contenitori occupati, all'inzio sono tutti vuoti
+Mutex CSStudente = 1; //semaforo binario per far garantire la sezione critica allo studente
+Mutex CSAddetto = 1; //semaforo binario per far garantire la sezione critica all'addetto
+
+
+Begin: 
+ 
+
+
+
+Studente() {
+begin
+
+ Posato = False //all'inizio il vassoio non è posato, dato che lo stiamo utilizzando noi
+ mangia(); //aspetta un ammontare di tempo random per simulare un pranzo 
+ i = 0 // parte dal primo contenitore
+ while(Posato == false) { //finche non hai trovato un contenitore dove riporre un tuo vassoio
+ 	wait(CSStudente) //entra nella sezione critica, in quanto si sta controllando una variabile globale e posando un vassoio
+	if(Occupati[i] == False) { //se il contenitore ha uno spazio disponibile
+		wait(Contenitori[i]) //allora posa il vassoio
+		signal(CSStudente) //puoi uscire dalla sezione critica ora
+		wait(CSStudente) //entra di nuovo nella sezione critica per controllare se bisogna comunicare che il contenitore sia occupato ora
+
+		if(Contenitore[i] == 0) //se dopo aver posato il vassoio, il contenitore è occupato ora
+			Occupati[i] = True; //comunica che è occupato 
+
+		signal(CSSstudente) //finito di controllare variabili nella sezione critica
+		Posato = True //abbiamo posato il vassoio, possiamo uscire dall'if e dal while
+
+	} else { //se il contenitori invec è occupato
+		signal(CSStudente) //termina sempre la wait prima dell'if, ma nel caso in cui finisca nell'else if
+		i = (i+1) % M // non ti scoraggiare e cerca nel prossimo (utilizza la tecnica dell'array circolare)
+          }
+ } //fine while
+
+ seguiLezione(); //torna a lezione una volta aver finito il pranzo e posato il vassoio
+
+end
+}
+
+
+Addetto() {
+begin
+int i, j //dichiarazioni variabili	
+ loop
+
+ sleep(rand 5%10) //dormi un tempo casuale prima di andare a controllare di nuovo se ci sono contenitori occupati
+ for(i = 0; i < M; i++) { //fatti un giro tra i contenitori
+	wait(CSAddetto) //assicurati di controllare Occupati in mutua esclusione
+ 	if(Occupati[i] == True) { //se trovi un contenitore pieno 
+		signal(CSAddetto) //rilascia la risorsa
+		for(j = 0; j < K; j++) { //allora per la grandezza del vano
+			signal(Contenitori[i]) //svuota tutti i vassoi
+			wait(CSAddetto) // assicurati la mutua esclusione per operare su una variabile condivisa
+			Occupati[I] = False //comunica che non è più occupato 
+			signal(CSAddetto) //fine della sezione critica
+			lava(); //lava i piatti sporchi, poi riprendi l'esecuzione	
+		} //end for
+	} else signal(CSAddetto) 
+ } //end external for
+
+ forever
+end
+}
+
+

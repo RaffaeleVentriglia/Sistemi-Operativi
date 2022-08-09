@@ -1,0 +1,74 @@
+Per lo svolgimento di un esame, una commissione decide di assegnare agli N candidati le tracce d'esame
+secondo il seguente schema. La commissione inserisce in un'urna M > N tracce ed attende che tutti i candidati
+siano presenti. I candidati una alla volta estraggono 3 tracce dall'urna, ne scelgono una e riconsegnano alla 
+commissione le altre 2. La commissione inserisce le 2 tracce nell'urna e chiama il candidato
+successivo, finchè tutti i candidati hanno scelto la propria traccia. Commissione e candidati terminano solo dopo
+che tutti i candidati hanno ricevuto la traccia.
+
+
+Var:
+M,N: int //teniamo traccia delle M tracce e degli N studenti
+Urna[M]: Array of Tracce //array che ci servira per l'estrazione/inserimento delle tracce
+TracceUtente[3]: int //array di tracce che l'utente puà scegliere
+Fine = 0; Semaforo binario // tiene traccia di quando possa finire l'assegnazione delle tracce
+Tutti = 0: Semaforo binario //avverte che tutti gli studenti sono arrivati in aula
+Scelta: 0: Semaforo binario //comunica alla commissione quando un utente ha finito di sceglierela traccia
+ChiamaCandidato = 0: int //contatore che tiene conto di quanti studenti sono stati chiamati
+CSStudente: Mutex = 1; //Semaforo mutex utilizzato in mutua esclusione per gestire le variabili condivise
+CSCommission: Mutex = 1; //semaforo mutex utilizzato in mutua esclusione per gestire le variabili condivise
+Arrivato = 0: semaforo binario //semaforo per comunicare alla commissione che uno studente è arrivato
+
+
+Studente() {
+begin
+ TracciaScelta: int
+
+ signal(Arrivato) //comunica che sei arrivato
+ wait(Tutti); //e aspetta che siano tutti
+
+ wait(CSStudente) //inizia la mutua esclusione per operare sull'urna singolarmente
+ for(i = 0; i < 3; i++) {
+	TracceUtente[i] = Urna[rand 0%M] //scegli tre tracce a caso
+ } 
+
+ TracciaScelta = TracceUtente[rand 0%2] //scegli una tracci a caso tra le tre
+
+ RiconsegnaTracce(TracceUtente,TracciaScelta) //funzione che riconsegna le tracce pescate dall'utente meno quella scelta alla commissione
+ 
+ Signal(Scelta) //comunica alla commissione che hai finito
+ signal(CSStudente) 
+ 
+ wait(Fine) //aspetta di aver finito: ti avvertirà la commissione
+
+end
+}
+
+
+
+Commissione() {
+begin
+ 
+ for(i = 0; i<M; i++) { //finche l'urna non è piena 
+	Urna[i] = rand 0 % M //asssegna una traccia casuale all'array
+ }
+
+ 
+ for(i = 0; i < N; i++) { //finche tutti gli studenti non sono arrivati
+	wait(Arrivato) //aspetta che arrivino
+ }
+ 
+ for(int i = 0; i < N; i++) { //finche tutti gli studenti non si sono seduti
+	signal(Tutti) //falli sedere
+ }
+
+ while(ChiamaCandidato < N) { //finchè non hai chiamato tutti i candidati
+ 	wait(Scelta);
+	ChiamaCanditato++; //aumenta il conto dei candidati già serviti 
+
+ }
+ 
+ for(i = 0; i<N ; i++) //comunica a tutti gli studenti che abbiamo finito
+ signal(Fine) //abbiamo finito
+
+end
+}

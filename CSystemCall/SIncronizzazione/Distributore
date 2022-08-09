@@ -1,0 +1,78 @@
+un'area di servizio dispone di N distributori di benzina, M<N addetti al rifornimento di carburante e P<M addetti al cambio d'olio. Una nuova macchina arrivata nell'area di servizio, si inserisce in una delle code corrispondenti ai distributori. Quando arriva il suo turno, comunica all'addetto al rifornimento la quantitā di carburante e se intende cambiare l'olio. Terminato il rifornimento, se richiesto, l'addetto al rifornimento comunica ad un addetto al cambio d'olio di effettuare il servizio. In ogni caso, finito il rifornimento, l'automobile libera il distributore.
+Si fornisca una soluzione usando semafori e processi. discutere la soluzione proposta in termini di possibili situazioni di starvation/deadlock e, nel caso, si propongano soluzioni ammissibili.
+
+
+Var:
+N,M,P: int
+Distributori[N] = 1: Array di semafori Binari //ci servirà per tenere traccia delle code nei vari distributori
+DaServire = 0: int //contatore di quante macchine bisogni servire
+AddettiRifornimento = M: Semaforo contatore //Contatore che gestisce gli addetti che fanno benzina
+AddettiOlio = P: Semaforo contatore //Contatore per gli addetti al cambio d'olio
+Mutex: Mutex = 1; //semaforo per gestire la mutua esclusione delle auto
+MutexOlio : Mutex = 1; //semaforo per gestire l'addetto dell'olio
+Pronto = 0: Semaforo binario // Serve al distributore a capire quando un cliente è disponibile ad essere servito
+CambioOlioEffettuato = 0;
+
+Automobile() {
+begin
+ CambioOlio = rand 0 % 1 //50% di possibilità che una macchina voglia fare olio
+
+ i = rand 0 % N //infilati in uno degli N distributori
+ wait(Distributore[i]) //aspetta che un distributore sia disponibile
+ signal(Pronto) //comunica che è pronto ad essere servito
+ wait(Mutex) //entra nella mutua esclusione
+ DaServire++ //comunica che c'è un altro cliente da servire
+ signal(Mutex) //esci dalla mutua esclusione
+ wait(AddettoRifornimento) //aspetta che un addetto al rifornimento ti serva
+ if(CambioOlio) {
+	signal(Distributore[i]) //lascia il distributore in ogni caso per far servire altre macchine
+	wait(AddettiOlio) //aspetta che un addetto dell'olio ti serva
+	wait(MutexOlio) 
+	CambioOlioEffettuato++
+	signal(MutexOLio)
+
+} 
+
+ signal(Distributori[i]) //lascia il distributore
+
+ 
+end
+}
+
+
+Distributore() {
+begin
+ loop
+  
+  wait(Pronto) //aspetta clienti da servire
+  wait(Mutex) 
+  if(DaServire < M) {
+	for(i = 0; i < DaServire; i++) { //per tutti i clienti da servire
+  	signal(AddettiRifornimento) //manda un addetto
+	DaServire--
+  } else {  	
+	  for(i = 0; i < M; i++) { //per tutti i clienti da servire
+	  	signal(AddettiRifornimento) //manda un addetto	
+		DaServire--
+	  }
+	signal(Mutex)
+    } else signal(Mutex)
+
+  
+  if(CambioOlioEffettuato > 0) {
+	for(i = 0; i< CambioOlioEffettuato; i++) {
+		signal(AddettiOlio)
+		CambioOlioEffettuato--	
+	}
+
+ forever
+end
+}
+
+
+
+
+
+
+
+//DA SPIEGARE COSA NON VA MA ALLA BUONA FUNZIONA 

@@ -1,0 +1,136 @@
+data una matrice nxn (dove n è pari) di interi generati casualmente, allocata dinamicamente, con n argomento
+da riga di comando, creare n thread che prelevano casualmente, ciascuno un elemento dalla riga di competenza
+(thread i-esimo, riga i-esima) e lo inseriscano, ogni secondo, in un vettore di N elementi. 
+
+N.B: un thread N+1esimo deve attendere il riempimento del vettore per stampare il contenuto dello stesso,
+e per stampare il numero di elementi inserito nel vettore da ciascun thread
+
+
+Var
+**A: array bidimensionale di interi
+global_N: int //numero di thread totali (e dimensione matrice)
+Vettore[N]: array di n int // utilizzato concorrentemente
+numeri_inseriti[N] = 0: array di int //inizializzato a 0, per tenere traccia dei numeri inseriti di ogni thread
+indice_vettore = 0: int //per tenere traccia dell'indice attuale del vettore
+Mutex = 1; mutex  //per accedere inizialmente al vettore
+Aspetta_riempimento = 0: sem binario //per aspettare il riempimento del vettore
+stampato = 0: mutex //indica se il vettore è stato stampat o meno
+numero_bloccati = 0;
+
+
+
+Main(int argc, char* argv[]) {
+ 
+ srand(time(NULL)) 
+ int N = atoi(argv[1])
+
+ if(N % 2 != 0) {
+ 	while(N % 2 != 0) {
+		scanf("%d", &N);
+	}
+ }
+
+ global_N = N;
+ pthread_t printer
+ pthread_t tids[N]
+ int t_id[N]
+
+ matrix_init(N); 
+
+ pthread_create(printer, Thread_print);
+
+ for(int i = 0; i<N; i++) {
+	t_id[i] = i;
+	pthread_create(tids[i], Thread_compute, t_id[i])
+ }
+
+ for(int i = 0; i<N; i++) {
+	pthread_join(tids[i])
+ }
+
+ pthread_join(printer, NULL);
+
+}
+
+
+Thread_compute(id: int) {
+
+
+ int riga = id
+ int colonna;
+ int elemento_prelevato
+ while(1) {
+
+	colonna = rand 0%global_N
+ 	elemento_prelevato = A[riga][colonna]
+	sleep(1)
+ 	wait(mutex)
+	if(indice_vettore == N) {
+	numero_bloccati++;
+	signal(mutex)
+	wait(stampato)
+	//il vettore è di nuovo libero ora, azzera tutto e riparti con l'ultimo numero prelevato
+	numeri_inseriti[id] = 0;	
+	wait(mutex)
+	Vettore[indice_vettore] = elemento_prelevato
+ 	indice_vettore++
+  	signal(mutex)
+	numeri_inseriti[id]++; 
+
+	} else {
+ 		Vettore[indice_vettore] = elemento_prelevato
+ 		indice_vettore++
+  		signal(mutex)
+		numeri_inseriti[id]++;
+	}
+ }
+ 
+ if(id == N-1) signal(Aspetta_riempimento)
+  
+ pthread_exit(NULL);
+
+} 
+
+Thread_print(thread_elementi: array int) {
+
+ n_bloccati: int
+ 
+ while(1) { 
+
+ wait(Aspetta_riempimento)
+ 
+ indice_vettore = 0 //resetta l'indice poichè "svuota" l'array
+
+ for(int i = 0; i<N; i++) {
+	printf("Thread %d: elementi inseriti %d\n", i, numeri_inseriti[i]);
+ }
+
+ printf("Vettore casuale generato da N thread: ");
+ for(int i = 0; i<N; i++) {
+	printf("%d ", Vettore[i]);	
+ }
+
+ 
+ for(int i = 0; i<numero_bloccati; i++) {
+	signal(stampato) 
+ }
+
+
+ }
+}
+
+void init_matrix(N) {
+
+ A = malloc(N*sizeof(*int));
+ for(int i = 0; i<N; i++) {
+	A[i] = malloc(N*sizeof(int));
+ }
+
+ for(int i = 0; i<N; i++) {
+	for(int j = 0; j<N; j++) {
+		A[i][j] = rand 0 % 20;
+	}
+ }
+
+}
+

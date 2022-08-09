@@ -1,0 +1,46 @@
+In un negozio di un barbiere, ci sono UNA SEDIA per far tagliare i capelli ai clienti, 
+e N sedie per farli attendere nel caso in cui sia occupato.
+Il barbiere solitamente dorme, e aspetta che arrivi un cliente per svegliarsi e farsi tagliare i capelli.
+Se nel frattempo arrivano altri clienti, si accomadano sulle sedie se sono disponibili, altrimenti
+vanno via se sono tutte occupate.
+
+
+Var
+MaxPosti: int //numero di posti massimi 
+SedieOccupate: int //indica quante sedie occupate ci possono essere al massimo
+Semaforo generico Clienti = 0; //semaforo che indica quanti clienti ci sono 
+Semaforo generico Barbiere = 0; //semaforo che indica un barbiere: all'inizio sta dormendo quindi è 0
+Mutex CSCliente = 1; //semaforo per accedere alle variabili condivise
+Mutex CSBarbiere = 1; //semaforo per accedere alle variabili condivise
+
+Barbiere() {
+begin 
+ loop
+ 
+ wait(clienti); //aspetta che un cliente entri
+ wait(CSBarbiere); //usa la mutex per diminuire la vairabile globale
+ SedieOccupate-- //decrementa i posti occupati perchè stai facendo venire una persona a tagliarsi i cap
+ signal(CSBarbiere) //esci dalla sezione critica
+ signal(Barbiere) //fai andare via il cliente (ritorna a 0 non a 1)
+
+ forever
+end
+}
+
+
+Cliente() {
+begin
+
+ wait(CS) //usa il mutex per entrare nella sezione critica 
+ if(SedieOccupate < MaxPosti) { //se le sedie occupate sono minori dei posti massimi
+	SedieOccupate++; //aumenta le sedie occupate, siamo entrati nel negozio dato che c'è posto
+	signal(CS); //usa il mutex per uscire dalla sezione critica
+	signal(clienti); //comunica al barbiere che c'è un cliente
+	wait(Barbiere) //aspetta il barbiere per il taglio - per questo lo inizializziamo a 0 barbiere
+	//nel frattempo si fa tagliare i capelli
+	//una volta finito esci dal negozio
+	
+ } else signal(CS);
+
+end
+}

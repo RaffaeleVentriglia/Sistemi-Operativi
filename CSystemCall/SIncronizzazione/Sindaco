@@ -1,0 +1,62 @@
+Un numero N di cittadini, eleggono il loro sindaco tra una rosa di M candidati. 
+Ogni cittadino vota in un unico seggio elettorale scegliendo il codice del candidato, da 0 a M-1. 
+Il processo di elezione del sindaco è realizzato da una persona deputata a ciò, ed inizia la raccolta dei voti
+quando non c'è più nessun elettore nel seggio per votare. 
+Termina con un risultato quando si è raggiunto il quorum (META+1 degli aventi diritto).
+
+
+Var:
+N, M: int 
+Candidati[M]: array di interi //ci servirà per tenere traccia dei codici dei candidati da votare
+VotiOttenuti[M] = 0: array di interi //ci servirà per tenere traccia dei voti ottenuti da un candidato
+HannoVotato: int // servirà a tenere traccia di quante persone fin'ora hanno votato
+FineVoti = 0: semaforo binario //servirà a capire quando tutti hanno finito di votare
+AccediSeggio = 1: Semaforo binario //semaforo binario per tenere conto dell'accesso di un cittadino al seggio.
+Mutex = 1: semaforo binario // Mutex che ci servirà per accedere in mutua esclusione alle variabili globali
+
+Cittadino() {
+begin
+ CodiceCandidato: int //serve per tenere traccia di chi vota
+ SceltaSindaco: int //servirà per scegliere chi votare
+ SchedaNulla: int //qualcuno potrà effettuare una scheda nulla
+ 
+  wait(AccediSeggio) //un cittadino effettua l'accesso al seggio
+  wait(Mutex) //entra nella sezione critica
+  SchedaNulla = rand 0 % 2; // c'è una possibilità su 3 che una persona effettui una scheda nulla 
+  if(!SchedaNulla) {
+  	SceltaSindaco = rand 0 % M-1 //sceglie un sindaco da votare
+  	VotiOttenuti[SceltaSindaco]++ //vota il candidato
+	HannoVotato++ //persone che hanno votato
+  } 
+  signal(Mutex) //esce dalla sezione critica
+  signal(AccediSeggio) //esce dal seggio 
+  
+  if(HannoVotato == N) //se è l'ultimo candiato 
+	signal(FineVoti) //comunica che è arrviata la fine dei voti
+  
+
+end
+}
+
+
+Scrutatore() {
+begin 
+ SindacoVincitore = 0: int //index del sindaco che ha vinto
+ VotoSindaco = 0: int //tiene traccia del sindaco che ha più voti 
+
+  wait(FineVoti) //aspetta che la giornata dei voti sia finita
+  
+  if(HannoVotato > N/2+1) {//se è stato raggiunto il quorum
+	  for(i = 0; i<M; i++) { //effettua la somma delle votazioni
+		if(VotiOttenuti[i] > VotoSindaco) {
+			SindacoVincitore = i
+			VotoSindaco = VotiOttenuti[i]
+ 		}	  
+
+	  }
+  
+   stamparisultato(Candidati[SindacoVincitore], VotoSindaco)
+  } else stamparisultato(0,0) //non è stato raggiunto il quorum
+
+end
+}

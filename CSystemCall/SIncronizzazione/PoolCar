@@ -1,0 +1,87 @@
+Un servizio di pool-car ha a disposizione N automobili, ognuna assegnata ad una zona della cittā. Gli utenti del servizio si recano al punto di partenza e prenotano un posto sull'automobile per la zona desiderata. Ogni automobile ha a disposizione M posti. Una volta occupati gli M posti, il veicolo parte per la zona stabilita. Nel caso in cui sia trascorso un tempo T, a partire dalla prima prenotazione per una detemrminata zona, il veicolo parte per la zona assegnata. Nel caso in cui non ci siano pių posti disponibili su un veicolo, gli utenti in eccesso si mettono in attesa della prossima corsa per la zona desiderata.
+
+Var
+N,M: int
+Automobile[N] = M : Array di Semaforo Contatore //Array di semafori contatori nel quale, ogni posizione equivarrà ad una zona (Array[0] = macchina 0 con M posti per la zona 0, ECC..)
+Partenza[N] = 0: Array di Semaforo Binario //Array di semafori binari che conta quale macchina sta partendo
+PronteAPartire[N] = 0: Array di interi // Array di interi inizializzato a 0 che farà capire al gestore quale auto vuole partire se il suo indice sia impostato ad 1
+Tornata[N] = 0: Array di semafori Binari // Array di semafori binari che tiene conto quando una macchina è in giro o è tornata in deposito
+Arrivo = 0: Semaforo binario //semaforo binario che tiene conto di quando una macchina arriva alla sua destinazione
+ContatoreFair: int //contatore che servirà al gestore per permettere a tutte le auto di partire prima o poi, controllando l'array delle pronte a partire in modo circolare
+UtentiAttendenti: int //contatore che indica quanti utenti stanno aspettando per una macchina che deve tornare dal giro
+Mutex = 1: Mutex //Semaforo mutex per permettere la mutua esclusione sulle variabili globali 
+
+Utente() {
+begin 
+
+ i = rand 0 % N //assegna una zona casuale ad un utente
+
+ if(Automobile[i] == 0) { //se i posti per una determinata zona non sono disponibili
+	 wait(Mutex) //entra nella sezione critica
+	 UtentiAttendenti++ //comunica che ci sono utenti che stanno attendendo
+	 signal(Mutex) //esci dalla sezione critica
+	 wait(Automobile[i]); //prenota la partenza
+	 wait(Tornata) //aspetta che sia tornata 
+ } else {
+ 	wait(Automobile[i]) //scegli l'automobile per portarti nella zona i e prenota il posto
+ }
+ 
+ wait(Mutex) //entra nella sezione critica
+ PronteAPartire[i] = 1; //una delle macchine è pronta a partire
+ signal(Mutex) //esci dalla sezione critica
+ 
+ Wait(Partenza[i]) //se c'è ancora posto, aspetta che parta 
+ Wait(Arrivo) //aspetta che la macchina arrivi a destinazione
+ 
+ //esci
+ 
+
+end
+}
+
+
+GestorePoolCar() {
+begin
+NumeroUtenti = 0; //variabile che tiene conto degli utenti che scenderanno ad ogni femrata
+ContatoreFair = 0; //contatore che sarà inizializzato a 0, in maniera circolare
+
+ loop
+  T = rand 10%20 //aspetta un tempo random prima di partire
+
+  while(PronteAPartire[ContatoreFair] == 0) { //finche non trovi auto da far paritre
+	ContatoreFair = (ContatoreFair+1) % N //fai avanzare in maniera circolare il contatore
+  }
+
+ while(Automobile[ContatoreFair] > 0) { //se la macchina pronta a partire trovata nell'indice del contatore fair ha ancora posti disponibili 
+ 	if(T == 0) { //se è arrivato il tempo di partenza
+		break; //esci dal ciclo e parti	
+	}
+
+ sleep(1); //addormentati 1 secondo
+ T--; //decrementa il tempo di attesa 
+    
+ }
+
+ Signal(Partenza[i]) //che sia stato raggiunto il tempo limite o che sia pieno, parti 
+
+ sleep(rand 1%5) //aspetta che la macchina arrivi alla zona desiderata
+
+ NumeroUtenti = Automobile[ContatoreFair] //assegna al numero utenti da far scendere il numero di utenti che hanno preso la macchina
+
+ for(i = 0; i < NumeroUtenti; i++) { //per il numero di utenti che hanno preso questa macchina
+ 	signal(Arrivo) //fai scendere l'utente
+ 	signal(Automobile[ContatoreFair]) //decrementa il posto nella macchina
+	
+ }
+
+ PronteAPartire[ContatoreFair] = 0 //la macchina non è piu pronta a partire perchè è vuota 
+ 
+ wait(Mutex) //entra nella sezione critica
+ for(i = 0; i < M; i++) { //per il numero di utenti posti disponibili della macchina
+	 signal(Tornata[ContatoreFair]) //comunica agli utenti che la macchina è tornata e pronta ad essere riempita per il suo quantitativo di posti
+	 UtentiAttendenti-- //diminuisci il numero di clienti in attesa perchè sono riusciti ad entrare in macchina
+ }
+ signal(Mutex) //esci dalla sezione critica 
+ forever
+end
+}
