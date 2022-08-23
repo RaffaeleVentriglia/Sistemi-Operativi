@@ -1,6 +1,9 @@
 Problema:
-In una biblioteca universitaria possono entrare e trovare posto seduto al pių N studenti.
-Ogni studente che ha trovato posto puō richiedere al bibliotecario un volume degli M a disposizione, considerando che per ogni volume ci sono K copie.
+In una biblioteca universitaria possono entrare 
+e trovare posto seduto al pių N studenti.
+Ogni studente che ha trovato posto puō richiedere 
+al bibliotecario un volume degli M a disposizione, 
+considerando che per ogni volume ci sono K copie.
 
 
 Var:

@@ -75,7 +75,7 @@ if((childpid = fork()) < 0) {
 
  //make the parent wait if necessary
  if(wait(&status) < 0) {
- perror("WAIT:");
+ perror("WAIT");
  exit(EXIT_FAILURE);
  }
  //---------------
