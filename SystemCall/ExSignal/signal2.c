@@ -4,7 +4,7 @@
 #include <signal.h>
 
 void handler_signal(int signo) {
-    printf("\nSTATT FERM STRUNZ\n");
+    printf("\nSTATT FERM\n");
 }
 
 void handler_sigcont(int signo) {
