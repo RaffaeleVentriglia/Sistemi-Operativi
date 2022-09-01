@@ -3,10 +3,6 @@
 #include <unistd.h>
 #include <signal.h>
 
-void handler_signal(int signo) {
-    printf("\nSTATT FERM\n");
-}
-
 void handler_sigcont(int signo) {
     printf("Inserire un numero: ");
     fflush(stdout);
