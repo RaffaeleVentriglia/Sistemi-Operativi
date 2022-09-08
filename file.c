@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <pthread.h>
 // HEADER PER LE OPTION FLAGS
 #include <fcntl.h>
 
@@ -18,6 +17,7 @@ int main(int argc, char* argv[]) {
     // APERTURA DI UN FILE
     ds_file = open("Pippo", O_RDONLY);
     ds_file2 = open("Prova", O_RDWR);
+    lseek(ds_file, 0, SEEK_SET); // CAMBIARE LA POSIZIONE DEL PUNTATORE NEL FILE
     // APERTURA DI UN FILE CON NOME DA RIGA DI COMANDO: ./file Pippo
     ds_file3 = open(argv[1], O_RDWR);
     if (ds_file == -1) {
