@@ -23,6 +23,9 @@ pid_t p1, p2;
 
 static void handler(int signo) {
     sig = signo;
+    if(sig == SIGUSR1) {
+        printf("P.P. mi sincronizzo con il processo P2\n");
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -70,7 +73,8 @@ int main(int argc, char* argv[]) {
     // Main process
     if((p1 && p2) != 0) {
         for(i = 0; i < N2; i++) {
-            pause();
+            //pause();
+            sleep(1);
             printf("Il mio pid è: %d\n", getpid());
         }
         wait(NULL);
